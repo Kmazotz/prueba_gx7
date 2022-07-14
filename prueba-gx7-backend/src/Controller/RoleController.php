@@ -34,7 +34,7 @@ class RoleController extends AbstractController
         try {
 
             $getRoles = $doctrine
-                    ->getRepository(Role::class)
+                    ->getRepository(Roles::class)
                     ->findAll();
         
             $this->roles = [];

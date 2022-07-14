@@ -4,6 +4,8 @@ namespace App\Controller;
 
 use App\Entity\Areas;
 use App\Entity\Empleado;
+use App\Entity\EmpleadoRol;
+use App\Entity\Roles;
 use Doctrine\Persistence\ManagerRegistry;
 use Exception;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -164,8 +166,51 @@ class EmpleadoController extends AbstractController
                     $empleado->setBoletin($data["boletin"]);
                     $empleado->setDescripcion($data["descripcion"]);
 
-                    $entityManager->persist($empleado);
-                    $entityManager->flush();
+                    if(count($data["roles"]) > 0){
+
+                        $entityManager->persist($empleado);
+                        $entityManager->flush();
+
+                        foreach($data["roles"] as $role){
+
+                            $empleadoRol = new EmpleadoRol();
+                            $entityManager = $doctrine->getManager();
+                            
+                            $findEmpleado = $doctrine
+                                ->getRepository(Empleado::class)
+                                ->find($empleado->getId());
+
+                            if(!$findEmpleado)
+                            {
+                                throw new Exception("No record found for id: {$empleado->getId()}.");
+                            }
+                            
+                            $empleadoRol->setEmpleado($findEmpleado);
+
+                            $findRole = $doctrine
+                                ->getRepository(Roles::class)
+                                ->find($role);
+
+                            if(!$findRole)
+                            {
+                                throw new Exception("No record found for id: {$role}.");
+                            }
+
+                            $empleadoRol->setRole($findRole);
+
+                            $entityManager->persist($empleadoRol);
+                            $entityManager->flush();
+                        }
+
+                    }else{
+
+                        return $this->json([
+                            'title' => 'Error',
+                            'status' => true,
+                            'message' => "Roles is required",
+                            'path' => 'src/Controller/EmpleadoController.php'
+                        ]);
+                    }
 
                     return $this->json([
                         'title' => 'Success',
