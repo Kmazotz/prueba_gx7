@@ -11,6 +11,8 @@ import { Checkbox, initializeIcons, PrimaryButton } from '@fluentui/react';
 
 const App :React.FC = ()=>{
 
+  initializeIcons();
+
   const stackTokens = { childrenGap: 50 };
   const dropdownStyles: Partial<IDropdownStyles> = { dropdown: { width: "100%" }, root: { height: 100 } };
   const stackStyles: Partial<IStackStyles> = { root: { minWidth: "90%" , margin: 'auto', marginTop : '3rem', display : 'flex', flexDirection: 'row', justifyContent: 'center'} };
@@ -44,10 +46,11 @@ const App :React.FC = ()=>{
   }
 
   useEffect(() => {
-    initializeIcons();
+    
   });
 
   return(
+    
       <React.Fragment>
           <div className="wrap">
               <div className="container">
