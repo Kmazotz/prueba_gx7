@@ -274,18 +274,6 @@ class EmpleadoController extends AbstractController
                     }
 
                     $empleado->setSexo(strtoupper($data["sexo"]));
-
-                    $findArea = $doctrine
-                                ->getRepository(Areas::class)
-                                ->find($data["area_id"]);
-
-                    if(!$findArea)
-                    {
-                        throw new Exception("No record found for id: {$data["area_id"]}.");
-                    }
-
-                    $empleado->setAreaId($findArea);
-                    $empleado->setBoletin($data["boletin"]);
                     $empleado->setDescripcion($data["descripcion"]);
                     $entityManager->flush();
 

@@ -36,12 +36,25 @@ const App :React.FC = ()=>{
   const [selectedRoles, setSelectedRoles] = React.useState<string[]>([]);
 //#endregion
 
+//#region edit form Data
+  const [editId, setEditID] = React.useState(0);
+  const [editName, setEditName] = React.useState('');
+  const [editEmail, setEditEmail] = React.useState('');
+  const [editSexo, setEditSexo] = React.useState('');
+  const [editDescription, setEditDescription] = React.useState('');
+//#endregion
+
   const stackTokens = { childrenGap: 50 };
   const dropdownStyles: Partial<IDropdownStyles> = { dropdown: { width: "100%" }, root: { height: 100 } };
   const stackStyles: Partial<IStackStyles> = { root: { minWidth: "90%" , margin: 'auto', marginTop : '3rem', display : 'flex', flexDirection: 'row', justifyContent: 'center'} };
+  const stackPanelStyles: Partial<IStackStyles> = { root: { minWidth: 150 , margin: 'auto', marginTop : '3rem', display : 'flex', flexDirection: 'column', justifyContent: 'center'} };
   const columnProps: Partial<IStackProps> = {
     tokens: { childrenGap: 15 },
     styles: { root: { width: '50%', minWidth: 350} },
+  };
+  const columnPanelProps: Partial<IStackProps> = {
+    tokens: { childrenGap: 15 },
+    styles: { root: { width: '50%', minWidth: 280} },
   };
 
   const deleteIcon: IIconProps = { iconName: 'Trash' };
@@ -68,11 +81,12 @@ const App :React.FC = ()=>{
 
   const [_items, setItem] = React.useState<Empleado[]>([]);
 
-  const [_selectionDetail, setSelectionDetail] = React.useState<Object | undefined>(undefined);
+  const [_selectionDetail, setSelectionDetail] = React.useState<Empleado | undefined>(undefined);
   const _selection = new Selection({
     onSelectionChanged : () => {
-      setSelectionDetail(_selection.getSelection()[0]);
+      setSelectionDetail(_selection.getSelection()[0] as Empleado);
     }
+    
   });
 
   const [isOpen, { setTrue: openPanel, setFalse: dismissPanel }] = useBoolean(false);
@@ -162,9 +176,23 @@ const App :React.FC = ()=>{
     [],
   );
 
+  const _onChangeEditName = React.useCallback(
+    (event: React.FormEvent<HTMLInputElement | HTMLTextAreaElement>, newValue?: string) => {
+      setEditName(newValue || '');
+    },
+    [],
+  );
+
   const _onChangeEmail = React.useCallback(
     (event: React.FormEvent<HTMLInputElement | HTMLTextAreaElement>, newValue?: string) => {
       setEmail(newValue || '');
+    },
+    [],
+  );
+
+  const _onChangeEditEmail = React.useCallback(
+    (event: React.FormEvent<HTMLInputElement | HTMLTextAreaElement>, newValue?: string) => {
+      setEditEmail(newValue || '');
     },
     [],
   );
@@ -173,6 +201,15 @@ const App :React.FC = ()=>{
     (ev?: React.FormEvent<HTMLElement | HTMLInputElement>, option?: IChoiceGroupOption) => {
       if(option){
         setSexo(option.key || '');
+      }
+    },
+    [],
+  );
+
+  const _onChangeEditSexo = React.useCallback(
+    (ev?: React.FormEvent<HTMLElement | HTMLInputElement>, option?: IChoiceGroupOption) => {
+      if(option){
+        setEditSexo(option.key || '');
       }
     },
     [],
@@ -193,6 +230,13 @@ const App :React.FC = ()=>{
   const _onChangeDescription = React.useCallback(
     (event: React.FormEvent<HTMLInputElement | HTMLTextAreaElement>, newValue?: string) => {
       setDescription(newValue || '');
+    },
+    [],
+  );
+
+  const _onChangeEditDescription = React.useCallback(
+    (event: React.FormEvent<HTMLInputElement | HTMLTextAreaElement>, newValue?: string) => {
+      setEditDescription(newValue || '');
     },
     [],
   );
@@ -233,7 +277,7 @@ const App :React.FC = ()=>{
      
       Object.values(data).map(value => {
 
-        if(value === "" || value === [] || value === 0 || value === NaN){
+        if(value === "" || value.toString().length === 0 || value === 0){
           dataComplete = false;
           setMessageType('error');
           setMessageContent('Los campos con (*) son obligatorios.');
@@ -272,9 +316,78 @@ const App :React.FC = ()=>{
     }
   }
 
+  function _updateEmpleado(): void {
+    
+    let dataComplete = false;
+
+    let data = {
+      id: editId,
+      nombre : editName,
+      email : editEmail,
+      sexo : editSexo,
+      descripcion: editDescription
+    }
+
+    if(data != null){
+     
+      Object.values(data).map(value => {
+
+        if(value === "" || value.toString().length === 0 || value === 0){
+          dataComplete = false;
+          setMessageType('error');
+          setMessageContent('Los campos con (*) son obligatorios.');
+        }else{
+          dataComplete = true;
+        }
+
+      });
+
+      if(dataComplete){
+          fetch('http://localhost:8000/empleado/update',{
+            method: 'POST',
+            body: JSON.stringify(data),
+            headers:{
+              'Content-Type': 'application/json'
+            }
+          }).then(res => res.json())
+          .catch(err => {
+            setMessageType('error');
+            setMessageContent(err);
+          })
+          .then(response => {
+            if(response){
+              setMessageType(response.title.toLowerCase());
+              setMessageContent(response.message);
+
+              _getEmpleados();
+              dismissPanel();
+
+            }
+          });
+
+        setMessageType('success');
+        setMessageContent('Campos completos.');
+      }
+
+    }else{
+      setMessageType('error');
+      setMessageContent('Los campos con (*) son obligatorios.');
+    }
+  }
+
   useEffect(() => {
     _getEmpleados();
   },[]);
+
+  useEffect(() => {
+    if(_selectionDetail !== undefined){
+      setEditID(_selectionDetail.id);
+      setEditName(_selectionDetail.name);
+      setEditEmail(_selectionDetail.email);
+      setEditSexo(_selectionDetail.sex);
+      setEditDescription(_selectionDetail.description);
+    }
+  },[_selectionDetail]);
 
   return(
     
@@ -362,7 +475,21 @@ const App :React.FC = ()=>{
                     onDismiss={dismissPanel}
                     closeButtonAriaLabel="Close"
                   >
-                    <p>Contenido de la pagina aqui.</p>
+                    <Stack tokens={stackTokens} styles={stackPanelStyles}>
+
+                      <Stack {...columnPanelProps}>
+                        <TextField label="Nombre Completo" required value={editName} onChange={_onChangeEditName}/>
+                        <TextField label="Correo electrónico" required value={editEmail} onChange={_onChangeEditEmail}/>
+                        <ChoiceGroup options={options} selectedKey={editSexo} label="Sexo" required={true} onChange={_onChangeEditSexo}/>
+                        <TextField label="Descripción" multiline rows={3} required value={editDescription} onChange={_onChangeEditDescription}/>
+                      </Stack>
+
+                      <Stack {...columnPanelProps}>
+                        <PrimaryButton text="Actualizar" onClick={_updateEmpleado} allowDisabledFocus style={{marginTop: '2rem'}}/>
+                      </Stack>
+
+                    </Stack>
+
                   </Panel>
                   
                   {isCalloutVisible ? (
