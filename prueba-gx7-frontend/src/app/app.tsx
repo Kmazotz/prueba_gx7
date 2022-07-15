@@ -362,7 +362,7 @@ const App :React.FC = ()=>{
                     onDismiss={dismissPanel}
                     closeButtonAriaLabel="Close"
                   >
-                    <p>Content goes here.</p>
+                    <p>Contenido de la pagina aqui.</p>
                   </Panel>
                   
                   {isCalloutVisible ? (
