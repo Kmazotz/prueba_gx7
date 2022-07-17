@@ -184,7 +184,7 @@ class EmpleadoRolController extends AbstractController
         }
     }
 
-    #[Route('/empleado/rol/update', name: 'empleado_area', methods: 'POST')]
+    #[Route('/empleado/rol/update', name: 'update_empleado_rol', methods: 'POST')]
     public function update(ManagerRegistry $doctrine, Request $request): Response
     {
         try {

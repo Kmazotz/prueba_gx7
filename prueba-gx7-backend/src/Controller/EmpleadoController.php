@@ -75,7 +75,7 @@ class EmpleadoController extends AbstractController
         }
     }
 
-    #[Route('/empleado/findbyid/{id}', name: 'empleado_by_id', methods: 'GET')]
+    #[Route('/empleado/findbyid/{id}', name: 'controller_find_empleado_by_id', methods: 'GET')]
     public function FindById(ManagerRegistry $doctrine, int $id) : Response
     {
         try {
@@ -124,7 +124,7 @@ class EmpleadoController extends AbstractController
         }
     }
 
-    #[Route('/empleado/store', name: 'store_empleado', methods: 'POST')]
+    #[Route('/empleado/store', name: 'controller_store_empleado', methods: 'POST')]
     public function store(ManagerRegistry $doctrine, Request $request) : Response
     {
         try {
@@ -240,7 +240,7 @@ class EmpleadoController extends AbstractController
         }
     }
 
-    #[Route('/empleado/update', name: 'empleado_area', methods: 'POST')]
+    #[Route('/empleado/update', name: 'controller_update_empleado', methods: 'POST')]
     public function update(ManagerRegistry $doctrine, Request $request): Response
     {
         try {
@@ -274,6 +274,11 @@ class EmpleadoController extends AbstractController
                     }
 
                     $empleado->setSexo(strtoupper($data["sexo"]));
+                    
+                    $empleado->setAreaId($empleado->getAreaId());
+
+                    $empleado->setBoletin($empleado->getBoletin());
+
                     $empleado->setDescripcion($data["descripcion"]);
                     $entityManager->flush();
 
@@ -306,18 +311,21 @@ class EmpleadoController extends AbstractController
         }
     }
 
-    #[Route('/empleado/delete', name: 'delete_empleado', methods: 'POST')]
+    #[Route('/empleado/delete', name: 'controller_delete_empleado', methods: 'POST')]
     public function delete(ManagerRegistry $doctrine, Request $request): Response
     {
         try 
         {
             if($request->getContent() !== null)
             {
+                
                 $entityManager = $doctrine->getManager();
                 $search = $request->getContent();
 
                 if(isset($search))
                 {
+
+
                     $data = json_decode($search, true);
 
                     $empleado = $entityManager->getRepository(Empleado::class)->find($data["id"]);
@@ -325,18 +333,46 @@ class EmpleadoController extends AbstractController
                     if(!$empleado)
                     {
 
-                        throw new Exception("No record found for id {$data["id"]}.");
+                        throw new Exception("No record found for employee id {$data["id"]}.");
                     }
 
-                    $entityManager->remove($empleado);
-                    $entityManager->flush();
+                    $entityManager = $doctrine->getManager();
 
-                    return $this->json([
-                        'title' => 'Success',
-                        'status' => true,
-                        'message' => "The record with id {$data["id"]} was delete.",
-                        'path' => 'src/Controller/EmpleadoController.php'
-                    ]);
+                    $empleadoRol = $entityManager->getRepository(EmpleadoRol::class)->findBy(array('empleado' => $empleado));
+                    
+                    foreach ($empleadoRol as $key) {
+                        
+                        $entityManager->remove($key);
+                        $entityManager->flush();
+
+                    }
+
+                    $empleadoRol = $entityManager->getRepository(EmpleadoRol::class)->findBy(array('empleado' => $empleado));
+
+                    if(count($empleadoRol) == 0){
+
+                        $data = json_decode($search, true);
+
+                        $entityManager = $doctrine->getManager();
+
+                        $empleado = $entityManager->getRepository(Empleado::class)->find($data["id"]);
+
+                        if(!$empleado)
+                        {
+
+                            throw new Exception("No record found for id {$data["id"]}.");
+                        }
+
+                        $entityManager->remove($empleado);
+                        $entityManager->flush();
+
+                        return $this->json([
+                            'title' => 'Success',
+                            'status' => true,
+                            'message' => "The record with id {$data["id"]} was delete.",
+                            'path' => 'src/Controller/EmpleadoController.php'
+                        ]);
+                    }
 
                 }
                 else

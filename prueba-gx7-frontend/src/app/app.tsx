@@ -7,7 +7,7 @@ import { Text } from '@fluentui/react/lib/Text';
 import { MessageBar, MessageBarType } from "@fluentui/react/lib/MessageBar";
 import { ChoiceGroup, IChoiceGroupOption } from '@fluentui/react/lib/ChoiceGroup';
 import { Dropdown, IDropdownOption, IDropdownStyles } from '@fluentui/react/lib/Dropdown';
-import { Checkbox, CommandBarButton, DefaultButton, DetailsList, FocusTrapCallout, FocusZone, FocusZoneTabbableElements, FontWeights, IColumn, IIconProps, initializeIcons, mergeStyleSets, Panel, PrimaryButton, Selection, SelectionMode } from '@fluentui/react';
+import { Checkbox, CommandBarButton, DefaultButton, DetailsList, FocusTrapCallout, FocusZone, FocusZoneTabbableElements, FontWeights, IColumn, IIconProps, initializeIcons, mergeStyleSets, Panel, PrimaryButton, Selection, SelectionMode, ShimmeredDetailsList } from '@fluentui/react';
 import { useBoolean, useId} from '@fluentui/react-hooks';
 
 export interface Empleado{
@@ -107,32 +107,6 @@ const App :React.FC = ()=>{
       marginTop: 20,
     },
   });
-
-  function _getEmpleados(){
-    fetch('http://localhost:8000/empleado/list',
-    {
-      method: "GET",
-      headers: {"Content-type": "application/json;charset=UTF-8"}
-    }).then(res => {
-      if(res.ok){
-        res.json().then(response => {
-          for (let i = 0; i < response.data.length; i++) {
-
-            const empleado : Empleado = {
-              id: response.data[i].id as number,
-              name: response.data[i].nombre as string,
-              email: response.data[i].email as string,
-              sex: response.data[i].sexo as string,
-              description : response.data[i].descripcion as string
-            }
-            
-            setItem(_items => _items.filter(key => key.id === empleado.id).length === 0 ? [..._items, empleado as Empleado] : _items.filter(key => key.id !== empleado.id));
-
-          }
-        })
-      }
-    }) 
-  };
 
   (function _getAreas(){
 
@@ -303,6 +277,8 @@ const App :React.FC = ()=>{
             if(response){
               setMessageType(response.title.toLowerCase());
               setMessageContent(response.message);
+
+              _getEmpleados();
             }
           });
 
@@ -375,11 +351,89 @@ const App :React.FC = ()=>{
     }
   }
 
+  const _getEmpleados = React.useCallback(() => {
+    setItem([]);
+    fetch('http://localhost:8000/empleado/list',
+    {
+      method: "GET",
+      headers: {"Content-type": "application/json;charset=UTF-8"}
+    }).then(res => {
+      if(res.ok){
+        res.json().then(response => {
+          for (let i = 0; i < response.data.length; i++) {
+
+            const empleado : Empleado = {
+              id: response.data[i].id as number,
+              name: response.data[i].nombre as string,
+              email: response.data[i].email as string,
+              sex: response.data[i].sexo as string,
+              description : response.data[i].descripcion as string
+            }
+            
+            setItem(_items => _items.filter(key => key.id === empleado.id).length === 0 ? [..._items, empleado as Empleado] : _items.filter(key => key.id !== empleado.id));
+
+          }
+        })
+      }
+    })
+  },[]);
+
+  const _deleteEmpleado = () => {
+    
+    let dataComplete = false;
+
+    let data = {
+      id: editId
+    }
+
+    Object.values(data).map(value => {
+
+      if(value === 0){
+        dataComplete = false;
+        setMessageType('error');
+        setMessageContent('Para eliminar un registro, se requiere seleccionar un registro valido.');
+      }else{
+        dataComplete = true;
+      }
+
+      if(dataComplete){
+        fetch('http://localhost:8000/empleado/delete',{
+            method: 'POST',
+            body: JSON.stringify(data),
+            headers:{
+              'Content-Type': 'application/json'
+            }
+          }).then(res => res.json())
+          .catch(err => {
+            setMessageType('error');
+            setMessageContent(err);
+          })
+          .then(response => {
+            if(response){
+              setMessageType(response.title.toLowerCase());
+              setMessageContent(response.message);
+
+              _getEmpleados();
+              toggleIsCalloutVisible();
+
+            }
+          });
+
+        setMessageType('success');
+        setMessageContent('Campos completos.');
+      }
+
+    });
+
+
+  }
+
   useEffect(() => {
     _getEmpleados();
   },[]);
 
   useEffect(() => {
+
     if(_selectionDetail !== undefined){
       setEditID(_selectionDetail.id);
       setEditName(_selectionDetail.name);
@@ -387,6 +441,7 @@ const App :React.FC = ()=>{
       setEditSexo(_selectionDetail.sex);
       setEditDescription(_selectionDetail.description);
     }
+
   },[_selectionDetail]);
 
   return(
@@ -461,7 +516,7 @@ const App :React.FC = ()=>{
                     </Stack>
                   </Stack>
 
-                  <DetailsList
+                  <ShimmeredDetailsList
                     items={_items}
                     columns={_columns}
                     selection={_selection}
@@ -510,7 +565,7 @@ const App :React.FC = ()=>{
 
                       <FocusZone handleTabKey={FocusZoneTabbableElements.all} isCircularNavigation>
                         <Stack className={styles.buttons} gap={8} horizontal>
-                          <PrimaryButton onClick={toggleIsCalloutVisible}>Si</PrimaryButton>
+                          <PrimaryButton onClick={_deleteEmpleado}>Si</PrimaryButton>
                           <DefaultButton onClick={toggleIsCalloutVisible}>No</DefaultButton>
                         </Stack>
                       </FocusZone>
